@@ -112,28 +112,6 @@ static void flush_callback(lv_display_t *disp, const lv_area_t *area, uint8_t *c
     lv_disp_flush_ready(disp);
 }
 
-// void lcd_init_pins() {
-//     // Configure the output pins
-//     gpio_config_t io_conf;
-//     io_conf.intr_type = GPIO_INTR_DISABLE;
-//     io_conf.mode = GPIO_MODE_OUTPUT;
-//     io_conf.pin_bit_mask = (1ULL << PIN_LCD_RES) |
-//                            (1ULL << PIN_LCD_CS) |
-//                            (1ULL << PIN_LCD_DC) |
-//                            (1ULL << PIN_LCD_WR) |
-//                            (1ULL << PIN_LCD_RD); // Set RD as output
-//     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-//     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-//     gpio_config(&io_conf);
-
-//     // Initialize the output pins to default states
-//     gpio_set_level(PIN_LCD_RES, 1);
-//     gpio_set_level(PIN_LCD_CS, 1);
-//     gpio_set_level(PIN_LCD_DC, 1);
-//     gpio_set_level(PIN_LCD_WR, 1);
-//     gpio_set_level(PIN_LCD_RD, 1); // RD pin high (inactive state)
-// }
-
 void configure_pin_power_on() {
     gpio_config_t pwr_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
@@ -141,17 +119,6 @@ void configure_pin_power_on() {
     };
     ESP_ERROR_CHECK(gpio_config(&pwr_gpio_config));
     gpio_set_level(PIN_POWER_ON, 1);
-    // // Configure the PIN_POWER_ON as an output pin
-    // gpio_config_t io_conf;
-    // io_conf.intr_type = GPIO_INTR_DISABLE;
-    // io_conf.mode = GPIO_MODE_OUTPUT;
-    // io_conf.pin_bit_mask = (1ULL << PIN_POWER_ON);
-    // io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    // io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    // gpio_config(&io_conf);
-
-    // // Set PIN_POWER_ON to high to turn on the power
-    // gpio_set_level(PIN_POWER_ON, 1);
 }
 
 void lcd_init_pins() {
