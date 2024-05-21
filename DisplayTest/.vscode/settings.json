@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "esp_lcd_panel_io.h": "c",
+        "lvgl.h": "c",
+        "esp_lcd_panel_ops.h": "c",
+        "pin_config.h": "c",
+        "esp_err.h": "c"
+    }
+}
