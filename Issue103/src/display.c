@@ -10,7 +10,9 @@ lv_obj_t *progressBar;
 static lv_style_t largeFontStyle;
 
 void setProgress(int32_t value) {
-    lv_bar_set_value(progressBar, value, LV_ANIM_OFF);
+    // lv_bar_set_value(progressBar, value, LV_ANIM_OFF);
+    lv_bar_set_value(progressBar, value, LV_ANIM_ON);
+    lv_refr_now(display);
 }
 
 void startProgress() {
@@ -43,8 +45,4 @@ void start_display() {
 
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
     setupLabels();
-}
-
-void tickDisplays() {
-    lv_timer_handler();
 }

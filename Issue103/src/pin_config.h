@@ -33,7 +33,7 @@
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8
 
-// #define EXAMPLE_LVGL_TICK_PERIOD_MS 2
+#define LVGL_TICK_PERIOD_MS 2
 
 // Supported alignment: 16, 32, 64. A higher alignment can enables higher burst transfer size, thus a higher i80 bus throughput.
 #define PSRAM_DATA_ALIGNMENT 32

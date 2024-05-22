@@ -137,9 +137,34 @@ void configure_lcd() {
 
 }
 
+static void lvgl_tick_callback(void* arg) {
+    lv_tick_inc(LVGL_TICK_PERIOD_MS);
+}
+
+void lvgl_timer_handler(void *pvParameter) {
+    while (1) {
+        // lv_timer_handler();
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+
+void create_display_timers() {
+    esp_timer_handle_t lvgl_timer;
+    const esp_timer_create_args_t lvgl_timer_args = {
+        .callback = &lvgl_tick_callback,
+        .name = "LVGL Timer"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&lvgl_timer_args, &lvgl_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_timer, pdMS_TO_TICKS(LVGL_TICK_PERIOD_MS)));
+
+    xTaskCreatePinnedToCore(lvgl_timer_handler, "LVGL Task", 1024*8, NULL, 1, NULL, 1);
+}
+
 void configure_display() {
     printf("Setup Display...\n");
     configure_gpio();
     configure_lcd();
     configure_lvgl();
+    create_display_timers();
 }
