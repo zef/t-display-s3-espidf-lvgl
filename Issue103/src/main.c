@@ -18,11 +18,6 @@ static const char *TAG = "example";
 
 lv_display_t *display;
 esp_lcd_panel_handle_t panel_handle = NULL;
-esp_timer_handle_t lvgl_tick_timer = NULL;
-
-static void lvgl_tick(void *arg) {
-    lv_timer_handler();
-}
 
 void print_color_map(uint8_t *color_map, size_t size) {
     printf("Color Map Values:\n");
@@ -147,16 +142,6 @@ void setup_display() {
     // lv_display_set_user_data(display, panel_handle);
     lv_display_set_buffers(display, buffer, NULL, sizeof(buffer), LV_DISPLAY_RENDER_MODE_PARTIAL);
     lv_display_set_flush_cb(display, flush_callback);
-    
-
-    ESP_LOGI(TAG, "Tick timer");
-    // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
-    const esp_timer_create_args_t lvgl_tick_timer_args = {
-        .callback = &lvgl_tick,
-        .name = "lvgl_tick"
-    };
-    ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, pdMS_TO_TICKS(6)));
 }
 
 void display_screen() {
@@ -186,8 +171,8 @@ void app_main(void) {
     vTaskDelay(pdMS_TO_TICKS(1000));
     display_screen();
 
-    // while (1) {
-    //     printf("/\n");
-    //     vTaskDelay(pdMS_TO_TICKS(500));
-    // }
+    while (1) {
+        lv_timer_handler();
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 }
