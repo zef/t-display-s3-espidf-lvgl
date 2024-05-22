@@ -24,10 +24,10 @@
 #define PIN_BUTTON_2                 14
 
 // The pixel number in horizontal and vertical
-#define LCD_H_RES 320
-#define LCD_V_RES 170
+#define SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 170
 
-#define LCD_BUFFER_SIZE   LCD_H_RES * 100
+#define LCD_BUFFER_SIZE   SCREEN_WIDTH * (SCREEN_HEIGHT/2)
 
 // Bit number used to represent command and parameter
 #define LCD_CMD_BITS 8

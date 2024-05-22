@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "pin_config.h": "c",
+        "freertos.h": "c"
+    }
+}
