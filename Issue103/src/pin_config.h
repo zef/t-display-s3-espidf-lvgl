@@ -27,12 +27,14 @@
 #define LCD_H_RES 320
 #define LCD_V_RES 170
 
+#define LCD_BUFFER_SIZE   LCD_H_RES * 100
+
 // Bit number used to represent command and parameter
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8
 
-#define EXAMPLE_LVGL_TICK_PERIOD_MS 2
+// #define EXAMPLE_LVGL_TICK_PERIOD_MS 2
 
 // Supported alignment: 16, 32, 64. A higher alignment can enables higher burst transfer size, thus a higher i80 bus throughput.
-#define EXAMPLE_PSRAM_DATA_ALIGNMENT 32
+#define PSRAM_DATA_ALIGNMENT 32
 

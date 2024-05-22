@@ -11,45 +11,50 @@
 #include "esp_log.h"
 
 #include "pin_config.h"
+#include "lv_conf.h"
+#include "lvgl.h"
 
 static const char *TAG = "example";
 
+lv_display_t *display;
 esp_lcd_panel_handle_t panel_handle = NULL;
-void *buf1 = NULL;
-void *buf2 = NULL;
-size_t buff_idx = 0;
-// static bool trans_done = true;
+esp_timer_handle_t lvgl_tick_timer = NULL;
 
-static void write_color()
-{
-    // if (!trans_done)
-    //     return;
-
-    // trans_done = false;
-    void *buff = (buff_idx++ % 2) ? buf1 : buf2;
-
-    ESP_LOGI(TAG, "writing color: %d, %d", buff_idx, buff_idx % 2);
-    esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 64, 64, buff);
+static void lvgl_tick(void *arg) {
+    lv_timer_handler();
 }
 
-// size_t trans_done_calls = 0;
+void print_color_map(uint8_t *color_map, size_t size) {
+    printf("Color Map Values:\n");
+    for (size_t i = 0; i < size; i++) {
+        printf("%02X ", color_map[i]); // Print each value in hexadecimal format
+        if ((i + 1) % 16 == 0) {
+            printf("\n"); // Add a new line every 16 values for better readability
+        }
+    }
+    printf("\n");
+}
 
-static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
-{
-    // trans_done = true;
-    // trans_done_calls++;
+static void flush_callback(lv_display_t *disp, const lv_area_t *area, uint8_t *color_map) {
+    printf("Flush Callback\n");
 
+    int offsetx1 = area->x1;
+    int offsetx2 = area->x2;
+    int offsety1 = area->y1;
+    int offsety2 = area->y2;
+    printf("offsets: %i, %i, %i, %i\n", offsetx1, offsety1, offsetx2, offsety2);
+    print_color_map(color_map, 16*4);
+    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map));
+    lv_disp_flush_ready(disp);
+}
+
+
+static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx) {
+    lv_disp_flush_ready(display);
     return false;
 }
 
-// static void tick_timer_cb(void *arg)
-// {
-//     ESP_LOGI(TAG, "trans_done_calls: %zu", trans_done_calls);
-//     trans_done_calls = 0;
-// }
-
-void app_main(void)
-{
+void setup_display() {
     gpio_config_t pwr_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << LCD_PIN_POWER};
@@ -85,8 +90,8 @@ void app_main(void)
             LCD_PIN_DATA7,
         },
         .bus_width = 8,
-        .max_transfer_bytes = LCD_H_RES * 100 * sizeof(uint16_t),
-        .psram_trans_align = EXAMPLE_PSRAM_DATA_ALIGNMENT,
+        .max_transfer_bytes = LCD_BUFFER_SIZE * sizeof(lv_color_t),
+        .psram_trans_align = PSRAM_DATA_ALIGNMENT,
         .sram_trans_align = 4,
     };
     ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
@@ -129,36 +134,60 @@ void app_main(void)
 
     gpio_set_level(LCD_PIN_BK_LIGHT, LCD_BK_LIGHT_ON_LEVEL);
 
-    ESP_LOGI(TAG, "Initialize UI");
-    // alloc draw buffers used by LVGL
-    // it's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
-    buf1 = heap_caps_malloc(LCD_H_RES * 100 * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    buf2 = heap_caps_malloc(LCD_H_RES * 100 * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-
-    assert(buf1);
-    assert(buf2);
-
-    memset(buf1, 0x0, LCD_H_RES * 100 * 2);
-    memset(buf2, 0xff, LCD_H_RES * 100 * 2);
-
-    ESP_LOGI(TAG, "buf1@%p, buf2@%p", buf1, buf2);
-
-    // esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 64, 64, buf1);
-
-    // const esp_timer_create_args_t tick_timer_args = {
-    //     .callback = &tick_timer_cb,
-    //     .name = "tick_timer"};
-    // esp_timer_handle_t tick_timer = NULL;
-    // ESP_ERROR_CHECK(esp_timer_create(&tick_timer_args, &tick_timer));
-    // ESP_ERROR_CHECK(esp_timer_start_periodic(tick_timer, 1000000));
-
     // user can flush pre-defined pattern to the screen before we turn on the screen or backlight
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
-    while (1)
-    {
-        write_color();
+    lv_init();
 
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
+    static lv_color_t buffer[LCD_BUFFER_SIZE];  
+    // static lv_color_t buffer2[LCD_BUFFER_SIZE];  
+
+    display = lv_display_create(LCD_H_RES, LCD_V_RES);
+    lv_disp_set_default(display);
+    // lv_display_set_user_data(display, panel_handle);
+    lv_display_set_buffers(display, buffer, NULL, sizeof(buffer), LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_set_flush_cb(display, flush_callback);
+    
+
+    ESP_LOGI(TAG, "Tick timer");
+    // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
+    const esp_timer_create_args_t lvgl_tick_timer_args = {
+        .callback = &lvgl_tick,
+        .name = "lvgl_tick"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, pdMS_TO_TICKS(6)));
+}
+
+void display_screen() {
+    printf("Display!\n");
+    lv_obj_t *scr = lv_screen_active();
+    lv_obj_t *bg = lv_obj_create(scr);
+    lv_obj_set_size(bg, LCD_H_RES, LCD_V_RES);
+    lv_obj_set_style_bg_color(bg, lv_color_hex(0x003a57), LV_PART_MAIN);
+    // // lv_obj_set_style_bg_color(display, lv_color_hex(0x003a57), LV_PART_MAIN);
+
+    // // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
+    // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_white(), LV_PART_MAIN);
+
+    // /*Create a white label, set its text and align it to the center*/
+    // lv_obj_t * label = lv_label_create(lv_screen_active());
+    // lv_label_set_text(label, "Hello world");
+    // lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0x00), LV_PART_MAIN);
+    // lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+}
+
+void app_main(void) {
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    printf("Start!\n");
+    setup_display();
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    display_screen();
+
+    // while (1) {
+    //     printf("/\n");
+    //     vTaskDelay(pdMS_TO_TICKS(500));
+    // }
 }
