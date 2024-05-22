@@ -50,6 +50,8 @@ static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pane
 }
 
 void setup_display() {
+    printf("Setup Display...\n");
+
     gpio_config_t pwr_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << LCD_PIN_POWER};
@@ -122,7 +124,7 @@ void setup_display() {
     esp_lcd_panel_init(panel_handle);
     // Set inversion, x/y coordinate order, x/y mirror according to your LCD module spec
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
-    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel_handle, false));
+    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel_handle, true));
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, false, true));
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, 0, 35));
@@ -145,27 +147,21 @@ void setup_display() {
 }
 
 void display_screen() {
-    printf("Display!\n");
-    lv_obj_t *scr = lv_screen_active();
-    lv_obj_t *bg = lv_obj_create(scr);
-    lv_obj_set_size(bg, LCD_H_RES, LCD_V_RES);
-    lv_obj_set_style_bg_color(bg, lv_color_hex(0x003a57), LV_PART_MAIN);
-    // // lv_obj_set_style_bg_color(display, lv_color_hex(0x003a57), LV_PART_MAIN);
-
-    // // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
     // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_white(), LV_PART_MAIN);
 
-    // /*Create a white label, set its text and align it to the center*/
-    // lv_obj_t * label = lv_label_create(lv_screen_active());
-    // lv_label_set_text(label, "Hello world");
-    // lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0x00), LV_PART_MAIN);
-    // lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+    /*Create a white label, set its text and align it to the center*/
+    lv_obj_t * label = lv_label_create(lv_screen_active());
+    lv_label_set_text(label, "Hello world");
+    lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0x00), LV_PART_MAIN);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+
+    // lv_obj_invalidate(display);
 }
 
 void app_main(void) {
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    printf("Start!\n");
     setup_display();
 
     vTaskDelay(pdMS_TO_TICKS(1000));
