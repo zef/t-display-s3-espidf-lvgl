@@ -4,6 +4,7 @@
         "lvgl.h": "c",
         "esp_lcd_panel_ops.h": "c",
         "pin_config.h": "c",
-        "esp_err.h": "c"
+        "esp_err.h": "c",
+        "string.h": "c"
     }
 }

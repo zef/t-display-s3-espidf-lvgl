@@ -1,12 +1,13 @@
 #include <stdio.h>
-#include "driver/gpio.h"
-#include "driver/ledc.h"
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 // #include "lv_conf.h"
-// #include "lvgl.h"
+#include "lvgl.h"
+#include "esp_err.h"
 #include "esp_log.h"
-#include <string.h>
+#include "driver/gpio.h"
+// #include "driver/ledc.h"
 
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
@@ -16,25 +17,46 @@
 
 static const char *TAG = "Debug";
 
+esp_lcd_panel_handle_t panel_handle = NULL;
 // lv_display_t *display;
-esp_lcd_panel_io_handle_t io_handle = NULL;
-static uint16_t *display_buffer[LVGL_LCD_BUF_SIZE];
+// static uint16_t *display_buffer[LCD_BUFFER_SIZE];
 // void *buf1 = NULL;
 
 static bool display_is_updating = false;
 
-static bool lvgl_ready = false;
+// static bool lvgl_ready = false;
+static bool white = false;
 
-void heartbeat(void *pvParameter) {
-    const TickType_t xDelay = pdMS_TO_TICKS(4000);
+void *buf = NULL;
 
-    while (1) {
-        printf("|\n");
-        vTaskDelay(xDelay);
-    }
+void writeScreen() {
+    printf("writeScreen\n");
+    white = !white;
 
-    vTaskDelete(NULL); // Delete the task (should not reach here)
+    // if (white) {
+    //     memset(buf, 0xFF, LCD_BUFFER_SIZE * 2);
+    // } else {
+    //     memset(buf, 0x0, LCD_BUFFER_SIZE * 2);
+    // }    void *buff = (buff_idx++ % 2) ? buf1 : buf2;
+    // void *buff = (buff_idx++ % 2) ? buf1 : buf2;
+    void *buff = buf;
+    esp_err_t result = esp_lcd_panel_draw_bitmap(panel_handle, 32, 32, 64, 64, buff);
+
+    // if (result != ESP_OK) {
+    //     ESP_LOGE(TAG, "Error drawing bitmap: %d", result);
+    // }
 }
+
+// void heartbeat(void *pvParameter) {
+//     const TickType_t xDelay = pdMS_TO_TICKS(2000);
+
+//     while (1) {
+//         printf("|\n");
+//         vTaskDelay(xDelay);
+//     }
+
+//     vTaskDelete(NULL); // Delete the task (should not reach here)
+// }
 
 // void fireLVGLTimer() {
 //     while(1) {
@@ -50,23 +72,22 @@ void heartbeat(void *pvParameter) {
 //     }
 // }
 
-static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
-{
-    printf("Color Trans Done.\n");
+static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx) {
+    // printf("Color Trans Done.\n");
     display_is_updating = false;
     return false;
 }
 
-void print_color_map(uint8_t *color_map, size_t size) {
-    printf("Color Map Values:\n");
-    for (size_t i = 0; i < size; i++) {
-        printf("%02X ", color_map[i]); // Print each value in hexadecimal format
-        if ((i + 1) % 16 == 0) {
-            printf("\n"); // Add a new line every 16 values for better readability
-        }
-    }
-    printf("\n");
-}
+// void print_color_map(uint8_t *color_map, size_t size) {
+//     printf("Color Map Values:\n");
+//     for (size_t i = 0; i < size; i++) {
+//         printf("%02X ", color_map[i]); // Print each value in hexadecimal format
+//         if ((i + 1) % 16 == 0) {
+//             printf("\n"); // Add a new line every 16 values for better readability
+//         }
+//     }
+//     printf("\n");
+// }
 
 // static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 // {
@@ -113,64 +134,83 @@ void print_color_map(uint8_t *color_map, size_t size) {
 //     lv_disp_flush_ready(disp);
 // }
 
-void configure_pin_power_on() {
+// void configure_pin_power_on() {
+//     gpio_config_t pwr_gpio_config = {
+//         .mode = GPIO_MODE_OUTPUT,
+//         .pin_bit_mask = 1ULL << PIN_POWER_ON
+//     };
+//     ESP_ERROR_CHECK(gpio_config(&pwr_gpio_config));
+//     gpio_set_level(PIN_POWER_ON, 1);
+// }
+
+// void lcd_init_pins() {
+//     configure_pin_power_on();
+
+//     gpio_config_t io_conf;
+//     io_conf.intr_type = GPIO_INTR_DISABLE;
+//     io_conf.mode = GPIO_MODE_OUTPUT;
+//     io_conf.pin_bit_mask = (1ULL << PIN_LCD_RES) |
+//                            (1ULL << PIN_LCD_CS) |
+//                            (1ULL << PIN_LCD_DC) |
+//                            (1ULL << PIN_LCD_WR);
+//     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+//     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+//     gpio_config(&io_conf);
+
+//     gpio_config_t io_conf_rd;
+//     io_conf_rd.intr_type = GPIO_INTR_DISABLE;
+//     io_conf_rd.mode = GPIO_MODE_INPUT;
+//     io_conf_rd.pin_bit_mask = (1ULL << PIN_LCD_RD);
+//     io_conf_rd.pull_down_en = GPIO_PULLDOWN_DISABLE;
+//     io_conf_rd.pull_up_en = GPIO_PULLUP_ENABLE; // Enable pull-up if needed
+//     gpio_config(&io_conf_rd);
+
+//     // Initialize the output pins to default states
+//     gpio_set_level(PIN_LCD_RES, 1);
+//     gpio_set_level(PIN_LCD_CS, 1);
+//     gpio_set_level(PIN_LCD_DC, 1);
+//     gpio_set_level(PIN_LCD_WR, 1);
+
+//     ESP_LOGI(TAG, "Turn off LCD backlight");
+//     gpio_config_t bk_gpio_config = {
+//         .mode = GPIO_MODE_OUTPUT,
+//         .pin_bit_mask = 1ULL << PIN_LCD_BL
+//     };
+//     ESP_ERROR_CHECK(gpio_config(&bk_gpio_config));
+//     gpio_set_level(PIN_LCD_BL, 0);
+// }
+
+void setup_display() {
+    // lcd_init_pins();
+
     gpio_config_t pwr_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << PIN_POWER_ON
     };
     ESP_ERROR_CHECK(gpio_config(&pwr_gpio_config));
     gpio_set_level(PIN_POWER_ON, 1);
-}
 
-void lcd_init_pins() {
-    configure_pin_power_on();
-
-    gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = (1ULL << PIN_LCD_RES) |
-                           (1ULL << PIN_LCD_CS) |
-                           (1ULL << PIN_LCD_DC) |
-                           (1ULL << PIN_LCD_WR);
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    gpio_config(&io_conf);
-
-    gpio_config_t io_conf_rd;
-    io_conf_rd.intr_type = GPIO_INTR_DISABLE;
-    io_conf_rd.mode = GPIO_MODE_INPUT;
-    io_conf_rd.pin_bit_mask = (1ULL << PIN_LCD_RD);
-    io_conf_rd.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf_rd.pull_up_en = GPIO_PULLUP_ENABLE; // Enable pull-up if needed
-    gpio_config(&io_conf_rd);
-
-    // Initialize the output pins to default states
-    gpio_set_level(PIN_LCD_RES, 1);
-    gpio_set_level(PIN_LCD_CS, 1);
-    gpio_set_level(PIN_LCD_DC, 1);
-    gpio_set_level(PIN_LCD_WR, 1);
-
-    ESP_LOGI(TAG, "Turn off LCD backlight");
     gpio_config_t bk_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << PIN_LCD_BL
     };
     ESP_ERROR_CHECK(gpio_config(&bk_gpio_config));
     gpio_set_level(PIN_LCD_BL, 0);
-}
 
-void setup_display() {
-    lcd_init_pins();
+    const gpio_config_t input_conf = {
+        .pin_bit_mask = (1ULL << PIN_LCD_RD),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE
+    };
+    ESP_ERROR_CHECK(gpio_config(&input_conf));
 
-    // gpio_set_level(PIN_LCD_RES, 0);
-    // vTaskDelay(pdMS_TO_TICKS(100));
-    // gpio_set_level(PIN_LCD_RES, 1);
 
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
+        .clk_src = LCD_CLK_SRC_DEFAULT,
         .dc_gpio_num = PIN_LCD_DC,
         .wr_gpio_num = PIN_LCD_WR,
-        .clk_src = LCD_CLK_SRC_PLL160M,
+        // .clk_src = LCD_CLK_SRC_PLL160M,
         .data_gpio_nums =
         {
             PIN_LCD_D0,
@@ -183,48 +223,55 @@ void setup_display() {
             PIN_LCD_D7,
         },
         .bus_width = 8,
-        .max_transfer_bytes = LVGL_LCD_BUF_SIZE * sizeof(uint16_t) * 2,
-        // .psram_trans_align = EXAMPLE_PSRAM_DATA_ALIGNMENT,
-        // .sram_trans_align = 4
+        .max_transfer_bytes = LCD_BUFFER_SIZE * sizeof(uint16_t),
+        .psram_trans_align = EXAMPLE_PSRAM_DATA_ALIGNMENT,
+        .sram_trans_align = 4
     };
-
     ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
 
+    esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_i80_config_t io_config = {
         .cs_gpio_num = PIN_LCD_CS,
         .pclk_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
         .trans_queue_depth = 20,
+        .dc_levels = {
+            .dc_idle_level = 0,
+            .dc_cmd_level = 0,
+            .dc_dummy_level = 0,
+            .dc_data_level = 1,
+        },
+        .flags = {
+            .swap_color_bytes = 1,  // Swap can be done in LvGL (default) or DMA
+        },
         // .on_color_trans_done = notify_lvgl_flush_ready,
         .on_color_trans_done = on_color_trans_done,
         // .user_ctx = &display,
         .user_ctx = NULL,
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
-        .dc_levels =
-        {
-            .dc_idle_level = 0,
-            .dc_cmd_level = 0,
-            .dc_dummy_level = 0,
-            .dc_data_level = 1,
-        },
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    esp_lcd_panel_handle_t panel_handle = NULL;
+
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = PIN_LCD_RES,
-        .color_space = ESP_LCD_COLOR_SPACE_RGB,
+        // .color_space = ESP_LCD_COLOR_SPACE_RGB,
+        .rgb_endian = LCD_RGB_ENDIAN_RGB,
         .bits_per_pixel = 16,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
-    esp_lcd_panel_invert_color(panel_handle, true);
 
-    esp_lcd_panel_swap_xy(panel_handle, true);
-    esp_lcd_panel_mirror(panel_handle, false, true);
-    // the gap is LCD panel specific, even panels with the same driver IC, can
-    // have different gap value
-    esp_lcd_panel_set_gap(panel_handle, 0, 35);
+    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel_handle, false));
+    ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));
+    ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, false, true));
+    ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, 0, 35));
+
+    // esp_lcd_panel_invert_color(panel_handle, true);
+    // esp_lcd_panel_swap_xy(panel_handle, true);
+    // esp_lcd_panel_mirror(panel_handle, false, true);
+    // esp_lcd_panel_set_gap(panel_handle, 0, 35);
 
     gpio_set_level(PIN_LCD_BL, 1);
 
@@ -234,8 +281,15 @@ void setup_display() {
     // printf("sizeof(display_buffer) %du\n", sizeof(display_buffer));
     // printf("LVGL_LCD_BUF_SIZE * sizeof(uint16_t) %du\n", LVGL_LCD_BUF_SIZE * sizeof(uint16_t));
 
-    esp_lcd_panel_disp_on_off(panel_handle, true);
+    // esp_lcd_panel_disp_on_off(panel_handle, true);
 
+    buf = heap_caps_malloc(LCD_BUFFER_SIZE * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    assert(buf);
+    memset(buf, 0xff, LCD_BUFFER_SIZE * 2);
+
+    // esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 64, 64, buf);
+
+    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
     // memset(display_buffer, 0x0F, sizeof(display_buffer));
     // ESP_LOGI(TAG, "buffer @%p", display_buffer);
     // ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 88, 88, display_buffer));
@@ -252,6 +306,7 @@ void setup_display() {
 
     // lvgl_ready = true;
     // xTaskCreatePinnedToCore(fireLVGLTimer, "lvgl Timer", 10000, NULL, 2, NULL, 1);
+
 }
 
 // void display_screen() {
@@ -274,18 +329,20 @@ void setup_display() {
 void app_main() {
     printf("Hello!\n");
     vTaskDelay(pdMS_TO_TICKS(1500));
-    xTaskCreate(heartbeat, "heartbeat", 2048, NULL, 1, NULL);
     printf("Start!\n");
     vTaskDelay(pdMS_TO_TICKS(2500));
     printf("Setup Display.\n");
     setup_display();
+    vTaskDelay(pdMS_TO_TICKS(1500));
+    // xTaskCreate(heartbeat, "heartbeat", 2048, NULL, 1, NULL);
 
+    // writeScreen();
     // vTaskDelay(pdMS_TO_TICKS(2500));
     // printf("Screen.\n");
     // display_screen();
 
-    // while (true) {
-    //     printf("/\n");
-    //     vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
+    while (true) {
+        printf("/\n");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
