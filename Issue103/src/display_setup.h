@@ -139,14 +139,16 @@ void configure_lcd() {
 
 static void lvgl_tick_callback(void* arg) {
     lv_tick_inc(LVGL_TICK_PERIOD_MS);
+    // printf("tick core %d\n", xPortGetCoreID() );
+
 }
 
-void lvgl_timer_handler(void *pvParameter) {
-    while (1) {
-        // lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
+// void lvgl_timer_handler(void *pvParameter) {
+//     while (1) {
+//         lv_timer_handler();
+//         vTaskDelay(pdMS_TO_TICKS(10));
+//     }
+// }
 
 
 void create_display_timers() {
@@ -158,7 +160,8 @@ void create_display_timers() {
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_timer_args, &lvgl_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_timer, pdMS_TO_TICKS(LVGL_TICK_PERIOD_MS)));
 
-    xTaskCreatePinnedToCore(lvgl_timer_handler, "LVGL Task", 1024*8, NULL, 1, NULL, 1);
+    // calling this from app_main because I it's crashing when I do it this way or in a timer
+    // xTaskCreatePinnedToCore(lvgl_timer_handler, "LVGL Task", 1024*8, NULL, 1, NULL, 0);
 }
 
 void configure_display() {

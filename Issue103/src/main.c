@@ -6,6 +6,7 @@
 // #include "driver/gpio.h"
 // #include "esp_err.h"
 // #include "esp_log.h"
+#include "lvgl.h"
 
 #include "display.h"
 void button_one(void *arg,void *usr_data) {
@@ -49,7 +50,10 @@ void app_main(void) {
     start_display();
     setup_buttons();
 
-    while (1) {
-        vTaskDelay(pdMS_TO_TICKS(100));
+    while (true) {
+        // I'm not sure why I can't extract this call to a separate task
+        // but I've tried one on both cores and it crashes.
+        lv_timer_handler();
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

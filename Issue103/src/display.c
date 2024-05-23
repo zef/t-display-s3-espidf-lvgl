@@ -2,7 +2,6 @@
 #include "display_setup.h"
 
 #include "lvgl.h"
-// #include "pin_config.h"
 
 lv_obj_t *statusLabel;
 lv_obj_t *subLabel;
@@ -10,9 +9,7 @@ lv_obj_t *progressBar;
 static lv_style_t largeFontStyle;
 
 void setProgress(int32_t value) {
-    // lv_bar_set_value(progressBar, value, LV_ANIM_OFF);
     lv_bar_set_value(progressBar, value, LV_ANIM_ON);
-    lv_refr_now(display);
 }
 
 void startProgress() {

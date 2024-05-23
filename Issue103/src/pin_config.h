@@ -27,7 +27,7 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 170
 
-#define LCD_BUFFER_SIZE   SCREEN_WIDTH * (SCREEN_HEIGHT/2)
+#define LCD_BUFFER_SIZE   SCREEN_WIDTH * SCREEN_HEIGHT / 3
 
 // Bit number used to represent command and parameter
 #define LCD_CMD_BITS 8
