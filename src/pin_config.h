@@ -1,7 +1,5 @@
 #pragma once
 
-#define LCD_PIXEL_CLOCK_HZ (2 * 1000 * 1000)
-
 #define LCD_PIN_DATA0 39
 #define LCD_PIN_DATA1 40
 #define LCD_PIN_DATA2 41
@@ -26,11 +24,12 @@
 
 #define LCD_BUFFER_SIZE   SCREEN_WIDTH * SCREEN_HEIGHT / 3
 
+#define LVGL_TICK_PERIOD_MS 2
+
+#define LCD_PIXEL_CLOCK_HZ (2 * 1000 * 1000)
+
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8
 
-#define LVGL_TICK_PERIOD_MS 2
-
 // Supported alignment: 16, 32, 64. A higher alignment can enables higher burst transfer size, thus a higher i80 bus throughput.
 #define PSRAM_DATA_ALIGNMENT 32
-
