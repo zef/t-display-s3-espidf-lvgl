@@ -2,7 +2,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// I'd like to not include this here, but I need it to call `lv_timer_handler()`
+// I'd like to not include this here, but I need it to call `lv_timer_handler()`. See comments below.
 #include "lvgl.h"
 
 #include "display.h"

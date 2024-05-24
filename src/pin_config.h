@@ -22,7 +22,10 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 170
 
-#define LCD_BUFFER_SIZE   SCREEN_WIDTH * SCREEN_HEIGHT / 3
+// I've seen some different recommendations for buffer sizes.
+// I keep getting artifacts (like elements from a previous run) when I try to do less than the full screen.
+// But doing it in one go seems to be working ok, but I might experiment with other values in the future.
+#define LCD_BUFFER_SIZE   SCREEN_WIDTH * SCREEN_HEIGHT
 
 #define LVGL_TICK_PERIOD_MS 2
 
