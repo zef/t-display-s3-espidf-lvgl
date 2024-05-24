@@ -35,26 +35,22 @@ static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pane
     return false;
 }
 void configure_gpio() {
-    gpio_config_t pwr_gpio_config = {
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1ULL << LCD_PIN_POWER)
-    };
-    ESP_ERROR_CHECK(gpio_config(&pwr_gpio_config));
-    gpio_set_level(LCD_PIN_POWER, LCD_BK_LIGHT_ON_LEVEL);
-
-    gpio_config_t bk_gpio_config = {
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << LCD_PIN_BK_LIGHT
-    };
-    ESP_ERROR_CHECK(gpio_config(&bk_gpio_config));
-    gpio_set_level(LCD_PIN_BK_LIGHT, LCD_BK_LIGHT_OFF_LEVEL);
-
     const gpio_config_t input_conf = {
         .pin_bit_mask = (1ULL << LCD_PIN_RD),
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE
     };
     ESP_ERROR_CHECK(gpio_config(&input_conf));
+
+    gpio_config_t output_pin_config = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = (1ULL << LCD_PIN_POWER) |
+                        (1ULL << LCD_PIN_BK_LIGHT)
+    };
+    ESP_ERROR_CHECK(gpio_config(&output_pin_config));
+
+    gpio_set_level(LCD_PIN_POWER, 1);
+    gpio_set_level(LCD_PIN_BK_LIGHT, 0);
 }
 
 void configure_lvgl() {
@@ -130,7 +126,7 @@ void configure_lcd() {
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, false, true));
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, 0, 35));
 
-    gpio_set_level(LCD_PIN_BK_LIGHT, LCD_BK_LIGHT_ON_LEVEL);
+    gpio_set_level(LCD_PIN_BK_LIGHT, 1);
 
     // user can flush pre-defined pattern to the screen before we turn on the screen or backlight
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
@@ -139,8 +135,6 @@ void configure_lcd() {
 
 static void lvgl_tick_callback(void* arg) {
     lv_tick_inc(LVGL_TICK_PERIOD_MS);
-    // printf("tick core %d\n", xPortGetCoreID() );
-
 }
 
 // void lvgl_timer_handler(void *pvParameter) {
@@ -160,7 +154,7 @@ void create_display_timers() {
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_timer_args, &lvgl_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_timer, pdMS_TO_TICKS(LVGL_TICK_PERIOD_MS)));
 
-    // calling this from app_main because I it's crashing when I do it this way or in a timer
+    // calling this from app_main instead because it's crashing when I do it this way or in a timer
     // xTaskCreatePinnedToCore(lvgl_timer_handler, "LVGL Task", 1024*8, NULL, 1, NULL, 0);
 }
 
