@@ -1,31 +1,35 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-// #include "driver/gpio.h"
-// #include "esp_err.h"
-// #include "esp_log.h"
 
 // I'd like to not include this here, but I need it to call `lv_timer_handler()`
 #include "lvgl.h"
 
-// internal code
 #include "display.h"
 #include "buttons.h"
 
+int32_t progress = 20;
+
 void button_one(void *arg,void *user_data) {
-    printf("Button Click!\n");
-    setProgress(20);
+    printf("Button One!\n");
+    if (progress < 100) {
+        progress += 5;
+        set_progress(progress);
+    }
 }
 
 void button_two(void *arg,void *user_data) {
     printf("Button Two!\n");
-    setProgress(80);
+    if (progress > 0) {
+        progress -= 5;
+        set_progress(progress);
+    }
 }
 
 void app_main(void) {
-    vTaskDelay(pdMS_TO_TICKS(2000));
-    start_display();
     setup_buttons();
+    start_display();
+    set_progress(progress);
 
     while (true) {
         // I'm not sure why I can't extract this call to a separate task

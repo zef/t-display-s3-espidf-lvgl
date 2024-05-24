@@ -1,4 +1,4 @@
 #include <stdio.h>
 
 void start_display();
-void setProgress(int32_t value);
+void set_progress(int32_t value);
