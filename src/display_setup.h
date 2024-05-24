@@ -1,14 +1,11 @@
 #include <stdio.h>
-#include "string.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_timer.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
+#include "esp_timer.h"
 #include "driver/gpio.h"
-#include "esp_err.h"
-#include "esp_log.h"
 
 #include "lv_conf.h"
 #include "lvgl.h"
@@ -29,11 +26,11 @@ static void flush_callback(lv_display_t *disp, const lv_area_t *area, uint8_t *c
     lv_disp_flush_ready(disp);
 }
 
-
 static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx) {
     lv_disp_flush_ready(display);
     return false;
 }
+
 void configure_gpio() {
     const gpio_config_t input_conf = {
         .pin_bit_mask = (1ULL << LCD_PIN_RD),
@@ -51,19 +48,6 @@ void configure_gpio() {
 
     gpio_set_level(LCD_PIN_POWER, 1);
     gpio_set_level(LCD_PIN_BK_LIGHT, 0);
-}
-
-void configure_lvgl() {
-    lv_init();
-
-    static lv_color_t buffer[LCD_BUFFER_SIZE];
-    // static lv_color_t buffer2[LCD_BUFFER_SIZE];
-
-    display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
-    lv_disp_set_default(display);
-    // lv_display_set_user_data(display, panel_handle);
-    lv_display_set_buffers(display, buffer, NULL, sizeof(buffer), LV_DISPLAY_RENDER_MODE_PARTIAL);
-    lv_display_set_flush_cb(display, flush_callback);
 }
 
 void configure_lcd() {
@@ -130,8 +114,20 @@ void configure_lcd() {
 
     // user can flush pre-defined pattern to the screen before we turn on the screen or backlight
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
-
 }
+
+void configure_lvgl() {
+    lv_init();
+
+    display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
+    lv_disp_set_default(display);
+
+    static lv_color_t buffer[LCD_BUFFER_SIZE];
+    lv_display_set_buffers(display, buffer, NULL, sizeof(buffer), LV_DISPLAY_RENDER_MODE_PARTIAL);
+
+    lv_display_set_flush_cb(display, flush_callback);
+}
+
 
 static void lvgl_tick_callback(void* arg) {
     lv_tick_inc(LVGL_TICK_PERIOD_MS);
@@ -144,8 +140,8 @@ static void lvgl_tick_callback(void* arg) {
 //     }
 // }
 
-
 void create_display_timers() {
+    // this timer is used to call `lv_tick_inc`, which is important for animation timings.
     esp_timer_handle_t lvgl_timer;
     const esp_timer_create_args_t lvgl_timer_args = {
         .callback = &lvgl_tick_callback,
@@ -154,11 +150,12 @@ void create_display_timers() {
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_timer_args, &lvgl_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_timer, pdMS_TO_TICKS(LVGL_TICK_PERIOD_MS)));
 
-    // calling this from app_main instead because it's crashing when I do it this way or in a timer
+    // this is used to call `lv_timer_handler`, which lets lvgl update the screen on a regular basis.
+    // calling this from app_main instead because it's crashing when I do it this way, or in a timer like the lvgl_timer above.
     // xTaskCreatePinnedToCore(lvgl_timer_handler, "LVGL Task", 1024*8, NULL, 1, NULL, 0);
 }
 
-void configure_display() {
+void setup_display() {
     printf("Setup Display...\n");
     configure_gpio();
     configure_lcd();
