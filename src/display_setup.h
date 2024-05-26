@@ -7,7 +7,6 @@
 #include "esp_timer.h"
 #include "driver/gpio.h"
 
-#include "lv_conf.h"
 #include "lvgl.h"
 
 #include "pin_config.h"
@@ -40,9 +39,9 @@ void configure_gpio() {
     ESP_ERROR_CHECK(gpio_config(&input_conf));
 
     gpio_config_t output_pin_config = {
-        .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = (1ULL << LCD_PIN_POWER) |
-                        (1ULL << LCD_PIN_BK_LIGHT)
+                        (1ULL << LCD_PIN_BK_LIGHT),
+        .mode = GPIO_MODE_OUTPUT
     };
     ESP_ERROR_CHECK(gpio_config(&output_pin_config));
 
@@ -53,9 +52,9 @@ void configure_gpio() {
 void configure_lcd() {
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
-        .clk_src = LCD_CLK_SRC_DEFAULT,
         .dc_gpio_num = LCD_PIN_DC,
         .wr_gpio_num = LCD_PIN_PCLK,
+        .clk_src = LCD_CLK_SRC_DEFAULT,
         .data_gpio_nums = {
             LCD_PIN_DATA0,
             LCD_PIN_DATA1,
@@ -77,6 +76,10 @@ void configure_lcd() {
         .cs_gpio_num = LCD_PIN_CS,
         .pclk_hz = LCD_PIXEL_CLOCK_HZ,
         .trans_queue_depth = 20,
+        .on_color_trans_done = on_color_trans_done,
+        .user_ctx = NULL,
+        .lcd_cmd_bits = LCD_CMD_BITS,
+        .lcd_param_bits = LCD_PARAM_BITS,
         .dc_levels = {
             .dc_idle_level = 0,
             .dc_cmd_level = 0,
@@ -85,11 +88,7 @@ void configure_lcd() {
         },
         .flags = {
             .swap_color_bytes = 1, // Swap can be done in LvGL (default) or DMA
-        },
-        .on_color_trans_done = on_color_trans_done,
-        .user_ctx = NULL,
-        .lcd_cmd_bits = LCD_CMD_BITS,
-        .lcd_param_bits = LCD_PARAM_BITS,
+        }
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
 
