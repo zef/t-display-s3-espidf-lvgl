@@ -57,7 +57,7 @@ Please send a pull request, or open [new GitHub Issue](../../issues/new) and tea
 `display_setup.h` has the display configuration. Most of the code is getting the esp display configured.
 A smaller portion is dedicated to using LVGL. I had some trouble understanding how to properly configure the buffer and flush callbacks.
 
-A configuration file is in `include/lv_conf.h`, though I didn't need to change anything except to enable it.
+A configuration file is in `include/lv_conf.h`, with a change to `#define LV_USE_OS   LV_OS_FREERTOS`.
 
 [This issue](https://github.com/Xinyuan-LilyGO/T-Display-S3/issues/103) helped me get the display working, and I found some other
 projects using LVGL that helped me figure out how to configure that part.
@@ -85,4 +85,9 @@ use the `Full Clean` feature found in the PlatformIO sidebar under "PROJECT TASK
 
 I also learned about using `monitor_filters = esp32_exception_decoder` in `platformio.ini`, which was very helpful for debugging crashes.
 I experienced a lot of crash backtraces trying to get this working and I didn't know how to debug those effectively.
+
+
+## Ideas
+
+- Implement lvgl simulator, including keypress actions.
 
