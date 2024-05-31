@@ -1,5 +1,8 @@
+#include <stdio.h>
+#include <string>
+
 #include "display.h"
-#include "display_setup.h"
+#include "screen.h"
 
 #include "lvgl.h"
 
@@ -8,13 +11,13 @@ lv_obj_t *progressLabel;
 lv_obj_t *progressBar;
 
 void set_progress(int32_t value) {
-    value = LV_CLAMP(0, value, 100);
-    
-    lv_bar_set_value(progressBar, value, LV_ANIM_OFF);
-    
-    char labelText[16];
-    snprintf(labelText, sizeof(labelText), "%ld/100", value);
-    lv_label_set_text(progressLabel, labelText);
+    int32_t clamped_value = LV_CLAMP(0, value, 100);
+    std::string labelText = std::to_string(clamped_value) + "/100";
+
+    lvgl_lock();
+    lv_bar_set_value(progressBar, clamped_value, LV_ANIM_OFF);
+    lv_label_set_text(progressLabel, labelText.c_str());
+    lvgl_unlock();
 }
 
 void create_progress_bar() {
@@ -34,8 +37,7 @@ void create_labels() {
     lv_obj_align(progressLabel, LV_ALIGN_CENTER, 0, 30);
 }
 
-void start_display() {
-    setup_display();
+void show_screen() {
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x375686), LV_PART_MAIN);
     create_progress_bar();
     create_labels();

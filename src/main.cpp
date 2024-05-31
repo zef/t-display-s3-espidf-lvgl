@@ -3,9 +3,10 @@
 #include "freertos/task.h"
 
 // I'd like to not include this here, but I need it to call `lv_timer_handler()`. See comments below.
-#include "lvgl.h"
+// #include "lvgl.h"
 
 #include "display.h"
+#include "screen.h"
 #include "buttons.h"
 
 int32_t progress = 20;
@@ -26,17 +27,17 @@ void button_two(void *arg,void *user_data) {
     }
 }
 
-void app_main(void) {
+extern "C" void app_main() {
     setup_buttons();
-    start_display();
+    setup_display();
+    show_screen();
     set_progress(progress);
 
+
+    uint32_t task_delay_ms = 10;
     while (true) {
         // I'm not sure why I can't extract this call to a separate task
-        // but I've tried one on both cores and it crashes.
-        // I also tired extracting a function that calls this to `display.h` and calling that function here instead
-        // but even that causes crashing. I have no idea why.
-        lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(10));
+        // but I've tried on both cores and it crashes.
+        task_delay_ms = fire_lvgl_timer(task_delay_ms);
     }
 }

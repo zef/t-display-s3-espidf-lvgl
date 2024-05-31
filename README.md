@@ -26,8 +26,8 @@ I also wanted this to be a clean project template where things are properly sepa
 as needed without having to dissect everything. Therefore, functionality is split between files in the `src` directory.
 
 - `main.c` contains minimal setup code and basic sample application logic, including implementation of button press behavior.
-- `display.c` contains the user's lvgl code, and `display.h` defines the public interface by which you can use it.
-- `display_setup.h` contains the code that configures the lcd panel and sets up lvgl to use it.
+- `display.c` contains the code that configures the lcd panel and sets up lvgl to use it.
+- `screen.c` contains the user's lvgl code, and `screen.h` defines the public interface by which you can use it.
 - `buttons.c` initializes the button functionality, and `buttons.h` defines the functions that `main.c` should call and implement to define button behavior.
 - `pin_config.h` defines board-specific pins and some lvgl preferences.
 

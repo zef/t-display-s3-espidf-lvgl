@@ -1,6 +1,9 @@
+#include "display.h"
+
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
@@ -14,9 +17,9 @@
 lv_display_t *display;
 esp_lcd_panel_handle_t panel_handle = NULL;
 
-static void flush_callback(lv_display_t *disp, const lv_area_t *area, uint8_t *color_map) {
-    printf("Flush Callback\n");
+static SemaphoreHandle_t lvgl_mux = NULL;
 
+static void flush_callback(lv_display_t *disp, const lv_area_t *area, uint8_t *color_map) {
     int offsetx1 = area->x1;
     int offsetx2 = area->x2;
     int offsety1 = area->y1;
@@ -45,8 +48,8 @@ void configure_gpio() {
     };
     ESP_ERROR_CHECK(gpio_config(&output_pin_config));
 
-    gpio_set_level(LCD_PIN_POWER, 1);
-    gpio_set_level(LCD_PIN_BK_LIGHT, 0);
+    gpio_set_level((gpio_num_t)LCD_PIN_POWER, 1);
+    gpio_set_level((gpio_num_t)LCD_PIN_BK_LIGHT, 0);
 }
 
 void configure_lcd() {
@@ -109,7 +112,7 @@ void configure_lcd() {
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, false, true));
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, 0, 35));
 
-    gpio_set_level(LCD_PIN_BK_LIGHT, 1);
+    gpio_set_level((gpio_num_t)LCD_PIN_BK_LIGHT, 1);
 
     // user can flush pre-defined pattern to the screen before we turn on the screen or backlight
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
@@ -122,7 +125,8 @@ void configure_lvgl() {
     lv_disp_set_default(display);
 
     static lv_color_t buffer[LCD_BUFFER_SIZE];
-    lv_display_set_buffers(display, buffer, NULL, sizeof(buffer), LV_DISPLAY_RENDER_MODE_PARTIAL);
+    static lv_color_t buffer2[LCD_BUFFER_SIZE];
+    lv_display_set_buffers(display, buffer, buffer2, sizeof(buffer), LV_DISPLAY_RENDER_MODE_PARTIAL);
 
     lv_display_set_flush_cb(display, flush_callback);
 }
@@ -132,12 +136,41 @@ static void lvgl_tick_callback(void* arg) {
     lv_tick_inc(LVGL_TICK_PERIOD_MS);
 }
 
-// void lvgl_timer_handler(void *pvParameter) {
-//     while (1) {
-//         lv_timer_handler();
-//         vTaskDelay(pdMS_TO_TICKS(10));
-//     }
-// }
+bool lvgl_lock(int timeout_ms) {
+    // Convert timeout in milliseconds to FreeRTOS ticks
+    // If `timeout_ms` is set to -1, the program will block until the condition is met
+    const TickType_t timeout_ticks = (timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
+    return xSemaphoreTakeRecursive(lvgl_mux, timeout_ticks) == pdTRUE;
+}
+
+void lvgl_unlock() {
+    xSemaphoreGiveRecursive(lvgl_mux);
+}
+
+// https://github.com/espressif/esp-idf/blob/003f3bb5dc7c8af8b71926b7a0118cfc503cab11/examples/peripherals/lcd/i80_controller/main/i80_controller_example_main.c#L163
+// I was expecting to use this to call `lv_timer_handler`, but it's crashing when I do it this way, or in a timer
+// so calling this from app_main instead
+//
+// would be at end of create_display_timers()
+// xTaskCreate(handle_lvgl_timer, "LVGL Timer Handler Task", LVGL_TASK_STACK_SIZE, NULL, LVGL_TASK_PRIORITY, NULL);
+//
+void handle_lvgl_timer(void *pvParameter) {
+    uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+    while (1) {
+        task_delay_ms = fire_lvgl_timer(task_delay_ms);
+    }
+}
+
+uint32_t fire_lvgl_timer(uint32_t task_delay_ms) {
+    // Lock the mutex because LVGL APIs are not thread-safe
+    if (lvgl_lock()) {
+        task_delay_ms = lv_timer_handler();
+        lvgl_unlock();
+    }
+    task_delay_ms = LV_CLAMP(LVGL_TASK_MIN_DELAY_MS, task_delay_ms, LVGL_TASK_MAX_DELAY_MS);
+    vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
+    return task_delay_ms;
+}
 
 void create_display_timers() {
     // this timer is used to call `lv_tick_inc`, which is important for animation timings.
@@ -149,13 +182,22 @@ void create_display_timers() {
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_timer_args, &lvgl_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_timer, pdMS_TO_TICKS(LVGL_TICK_PERIOD_MS)));
 
-    // this is used to call `lv_timer_handler`, which lets lvgl update the screen on a regular basis.
-    // calling this from app_main instead because it's crashing when I do it this way, or in a timer like the lvgl_timer above.
-    // xTaskCreatePinnedToCore(lvgl_timer_handler, "LVGL Task", 1024*8, NULL, 1, NULL, 0);
+    lvgl_mux = xSemaphoreCreateRecursiveMutex();
+    assert(lvgl_mux);
+    // xTaskCreate(handle_lvgl_timer, "LVGL Timer Handler Task", LVGL_TASK_STACK_SIZE, NULL, LVGL_TASK_PRIORITY, NULL);
+}
+
+void update_ui(const std::function<void()>& block) {
+    if (lvgl_lock(-1)) {
+        block();
+        lvgl_unlock();
+    } else {
+        printf("Failed to lock the LVGL mutex\n");
+        block();
+    }
 }
 
 void setup_display() {
-    printf("Setup Display...\n");
     configure_gpio();
     configure_lcd();
     configure_lvgl();
