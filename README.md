@@ -54,7 +54,7 @@ Please send a pull request, or open [new GitHub Issue](../../issues/new) and tea
 
 ### LVGL:
 
-`display_setup.h` has the display configuration. Most of the code is getting the esp display configured.
+`display.cpp` has the display configuration. Most of the code is getting the esp display configured.
 A smaller portion is dedicated to using LVGL. I had some trouble understanding how to properly configure the buffer and flush callbacks.
 
 A configuration file is in `include/lv_conf.h`, with a change to `#define LV_USE_OS   LV_OS_FREERTOS`.

@@ -154,12 +154,12 @@ void lvgl_unlock() {
 // would be at end of create_display_timers()
 // xTaskCreate(handle_lvgl_timer, "LVGL Timer Handler Task", LVGL_TASK_STACK_SIZE, NULL, LVGL_TASK_PRIORITY, NULL);
 //
-void handle_lvgl_timer(void *pvParameter) {
-    uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
-    while (1) {
-        task_delay_ms = fire_lvgl_timer(task_delay_ms);
-    }
-}
+// void handle_lvgl_timer(void *pvParameter) {
+//     uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+//     while (1) {
+//         task_delay_ms = fire_lvgl_timer(task_delay_ms);
+//     }
+// }
 
 uint32_t fire_lvgl_timer(uint32_t task_delay_ms) {
     // Lock the mutex because LVGL APIs are not thread-safe
@@ -184,7 +184,6 @@ void create_display_timers() {
 
     lvgl_mux = xSemaphoreCreateRecursiveMutex();
     assert(lvgl_mux);
-    // xTaskCreate(handle_lvgl_timer, "LVGL Timer Handler Task", LVGL_TASK_STACK_SIZE, NULL, LVGL_TASK_PRIORITY, NULL);
 }
 
 void update_ui(const std::function<void()>& block) {
