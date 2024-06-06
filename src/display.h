@@ -1,5 +1,7 @@
 #include <functional>
 
+#include "pin_config.h"
+
 void setup_display();
 uint32_t fire_lvgl_timer(uint32_t task_delay_ms);
 

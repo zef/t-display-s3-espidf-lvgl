@@ -12,8 +12,6 @@
 
 #include "lvgl.h"
 
-#include "pin_config.h"
-
 lv_display_t *display;
 esp_lcd_panel_handle_t panel_handle = NULL;
 

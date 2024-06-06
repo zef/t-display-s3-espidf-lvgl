@@ -57,7 +57,9 @@ Please send a pull request, or open [new GitHub Issue](../../issues/new) and tea
 `display.cpp` has the display configuration. Most of the code is getting the esp display configured.
 A smaller portion is dedicated to using LVGL. I had some trouble understanding how to properly configure the buffer and flush callbacks.
 
-A configuration file is in `include/lv_conf.h`, with a change to `#define LV_USE_OS   LV_OS_FREERTOS`.
+A configuration file is in `include/lv_conf.h`, with the following modifications:
+- Change to `#define LV_USE_OS   LV_OS_FREERTOS`.
+- Change default font to size 18, as 14 does not look great on the display.
 
 [This issue](https://github.com/Xinyuan-LilyGO/T-Display-S3/issues/103) helped me get the display working, and I found some other
 projects using LVGL that helped me figure out how to configure that part.
