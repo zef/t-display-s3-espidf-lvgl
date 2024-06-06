@@ -7,7 +7,14 @@ This is a basic template that provides a starting point for using the excellent 
 - a working screen
 - functions for both buttons on the module
 
-Though it sounds simple, getting these things working was quite an effort for me.
+#### using:
+
+- [PlatformIO](https://platformio.org). I am using it via VSCode, though it shouldn't matter.
+- the [`ESP-IDF`](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html) framework (not `Arduino`).
+- the [LVGL](https://lvgl.io) graphics library.
+- the [espressif/button](https://components.espressif.com/components/espressif/button) component.
+
+Though it sounds simple, getting these things working together was quite an effort for me.
 I also found some posts showing that others have struggled with similar issues.
 I hope this proves helpful to others so they don't have to go through the same stuggle.
 
@@ -16,14 +23,6 @@ The sample code shows a couple labels with a progress bar that changes value as 
 ![t-display-s3 demo with lvgl](t-display-s3-lvgl.jpeg)
 
 I'd love to hear from you if it helped you out, or if you have any feedback.
-
-#### The project uses:
-
-- [PlatformIO](https://platformio.org)
-    - I am using it inside VSCode, though it shouldn't matter.
-- the [`ESP-IDF`](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html) framework (not `Arduino`).
-- the [LVGL](https://lvgl.io) graphics library.
-- the [espressif/button](https://components.espressif.com/components/espressif/button) component.
 
 ## Architecture
 
@@ -57,7 +56,7 @@ Improvements and corrections are welcome! I'm an experienced software developer,
 
 Please send a pull request, or open [new GitHub Issue](../../issues/new) and teach me something!
 
-### LVGL:
+### LVGL
 
 `display.cpp` has the display configuration. Most of the code is getting the esp display configured.
 A smaller portion is dedicated to using LVGL. I had some trouble understanding how to properly configure the buffer and flush callbacks.
@@ -74,7 +73,7 @@ projects using LVGL that helped me figure out how to configure that part.
 Why can't I call `lv_timer_handler()` through a task without it crashing? It seems I need to call this from app_main, but I thought I
 should be able to put this in a call via `xTaskCreate`.
 
-### Buttons:
+### Buttons
 
 In searching I found some people have had trouble getting both buttons working with esp-idf and it wasn't immediately clear to me how to do it.
 
@@ -87,7 +86,7 @@ Please let me know if you know a better way.
 In order to trigger the build system into pulling down the dependency into the `managed_components` folder, I found that I needed to
 use the `Full Clean` feature found in the PlatformIO sidebar under "PROJECT TASKS".
 
-## Learnings:
+## Learnings
 
 I also learned about using `monitor_filters = esp32_exception_decoder` in `platformio.ini`, which was very helpful for debugging crashes.
 I experienced a lot of crash backtraces trying to get this working and I didn't know how to debug those effectively.
