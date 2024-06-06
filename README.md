@@ -1,7 +1,7 @@
-# TTGO T-Display S3 + ESP-IDF + LVGL
+# T-Display-S3 + ESP-IDF + LVGL
 
 This is a basic template that provides a starting point for using the excellent and affordable
-[TTGO T-Display-S3](https://www.lilygo.cc/products/t-display-s3?variant=42351558590645) module from LILYGO.
+[T-Display-S3](https://www.lilygo.cc/products/t-display-s3?variant=42351558590645) module from LILYGO.
 
 #### The project provides a template that implements:
 - a working screen
