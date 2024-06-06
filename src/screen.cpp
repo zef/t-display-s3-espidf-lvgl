@@ -39,7 +39,7 @@ void create_labels() {
 }
 
 void show_screen() {
-    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x375686), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_black(), LV_PART_MAIN);
     create_progress_bar();
     create_labels();
 }

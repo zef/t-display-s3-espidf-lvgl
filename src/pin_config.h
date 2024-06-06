@@ -25,8 +25,9 @@
 #define LCD_BUFFER_SIZE   (SCREEN_WIDTH * SCREEN_HEIGHT) / 2
 
 #define LVGL_TICK_PERIOD_MS 2
+// I've seen from 2-10 as a recommendation for this value, with some people experiencing crashing when this is too low.
+#define LVGL_TASK_MIN_DELAY_MS 10 
 #define LVGL_TASK_MAX_DELAY_MS 500
-#define LVGL_TASK_MIN_DELAY_MS 16
 #define LVGL_TASK_STACK_SIZE   (8 * 1024)
 #define LVGL_TASK_PRIORITY     2
 

@@ -8,7 +8,12 @@ This is a basic template that provides a starting point for using the excellent 
 - functions for both buttons on the module
 
 Though it sounds simple, getting these things working was quite an effort for me.
+I also found some posts showing that others have struggled with similar issues.
 I hope this proves helpful to others so they don't have to go through the same stuggle.
+
+The sample code shows a couple labels with a progress bar that changes value as the buttons are pressed.
+
+![t-display-s3 demo with lvgl](t-display-s3-lvgl.jpeg)
 
 I'd love to hear from you if it helped you out, or if you have any feedback.
 
@@ -16,14 +21,14 @@ I'd love to hear from you if it helped you out, or if you have any feedback.
 
 - [PlatformIO](https://platformio.org)
     - I am using it inside VSCode, though it shouldn't matter.
-- the [`ESP-IDF`](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html) framework, not `Arduino`.
+- the [`ESP-IDF`](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html) framework (not `Arduino`).
 - the [LVGL](https://lvgl.io) graphics library.
 - the [espressif/button](https://components.espressif.com/components/espressif/button) component.
 
 ## Architecture
 
 I also wanted this to be a clean project template where things are properly separated and components can be included
-as needed without having to dissect everything. Therefore, functionality is split between files in the `src` directory.
+as needed without having to dissect everything to get what you need. Therefore, functionality is split between files in the `src` directory.
 
 - `main.c` contains minimal setup code and basic sample application logic, including implementation of button press behavior.
 - `display.c` contains the code that configures the lcd panel and sets up lvgl to use it.
@@ -37,7 +42,7 @@ I couldn't find sample code that used the configurations I was going for, and wi
 problems and lack of documentation, it was a challenge to get this working.
 
 I wanted to use `ESP-IDF` rather than `Arduino` because of some specific reasons for a project I'm working on.
-I had some experience using the module with [TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) and the Arduino framework,
+I had some experience using the T-Display module with [TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) and the Arduino framework,
 but things are different Espressif framework.
 
 There are also a lot of breaking changes to LVGL between `v8.x` and `v9.x`, but I wanted to use the latest version.
@@ -66,9 +71,8 @@ projects using LVGL that helped me figure out how to configure that part.
 
 #### Question:
 
-Why can't I call `lv_timer_handler()` through a task or abstracted function without it crashing?
-I'm also aware that trying to call this too frequently causes crashing, and I've seen recommendations to call it
-every 2-10ms and using the lower end of the range crashes for me.
+Why can't I call `lv_timer_handler()` through a task without it crashing? It seems I need to call this from app_main, but I thought I
+should be able to put this in a call via `xTaskCreate`.
 
 ### Buttons:
 
@@ -88,8 +92,7 @@ use the `Full Clean` feature found in the PlatformIO sidebar under "PROJECT TASK
 I also learned about using `monitor_filters = esp32_exception_decoder` in `platformio.ini`, which was very helpful for debugging crashes.
 I experienced a lot of crash backtraces trying to get this working and I didn't know how to debug those effectively.
 
-
 ## Ideas
 
 - Implement lvgl simulator, including keypress actions.
-
+- Implement an lvgl animation.

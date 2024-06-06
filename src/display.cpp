@@ -147,7 +147,7 @@ void lvgl_unlock() {
 
 // https://github.com/espressif/esp-idf/blob/003f3bb5dc7c8af8b71926b7a0118cfc503cab11/examples/peripherals/lcd/i80_controller/main/i80_controller_example_main.c#L163
 // I was expecting to use this to call `lv_timer_handler`, but it's crashing when I do it this way, or in a timer
-// so calling this from app_main instead
+// so calling this from app_main instead. It seems to be related to a watchdog timer issue. I played with that a bit but couldn't get it working.
 //
 // would be at end of create_display_timers()
 // xTaskCreate(handle_lvgl_timer, "LVGL Timer Handler Task", LVGL_TASK_STACK_SIZE, NULL, LVGL_TASK_PRIORITY, NULL);

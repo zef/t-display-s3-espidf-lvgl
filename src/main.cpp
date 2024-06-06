@@ -33,8 +33,7 @@ extern "C" void app_main() {
     show_screen();
     set_progress(progress);
 
-
-    uint32_t task_delay_ms = 10;
+    uint32_t task_delay_ms = LVGL_TASK_MIN_DELAY_MS;
     while (true) {
         // I'm not sure why I can't extract this call to a separate task
         // but I've tried on both cores and it crashes.
