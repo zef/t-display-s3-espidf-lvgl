@@ -35,6 +35,8 @@ as needed without having to dissect everything to get what you need. Therefore, 
 - `buttons.c` initializes the button functionality, and `buttons.h` defines the functions that `main.c` should call and implement to define button behavior.
 - `pin_config.h` defines board-specific pins and some lvgl preferences.
 
+You need to be aware of thread safety issues with LVGL and display updates. `lvgl_lock`, `lvgl_unlock`, and `update_ui` are provided to help with this.
+
 ## Motivation
 
 I couldn't find sample code that used the configurations I was going for, and with some version compatibility
@@ -67,11 +69,6 @@ A configuration file is in `include/lv_conf.h`, with the following modifications
 
 [This issue](https://github.com/Xinyuan-LilyGO/T-Display-S3/issues/103) helped me get the display working, and I found some other
 projects using LVGL that helped me figure out how to configure that part.
-
-#### Question:
-
-Why can't I call `lv_timer_handler()` through a task without it crashing? It seems I need to call this from app_main, but I thought I
-should be able to put this in a call via `xTaskCreate`.
 
 ### Buttons
 

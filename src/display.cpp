@@ -145,20 +145,6 @@ void lvgl_unlock() {
     xSemaphoreGiveRecursive(lvgl_mux);
 }
 
-// https://github.com/espressif/esp-idf/blob/003f3bb5dc7c8af8b71926b7a0118cfc503cab11/examples/peripherals/lcd/i80_controller/main/i80_controller_example_main.c#L163
-// I was expecting to use this to call `lv_timer_handler`, but it's crashing when I do it this way, or in a timer
-// so calling this from app_main instead. It seems to be related to a watchdog timer issue. I played with that a bit but couldn't get it working.
-//
-// would be at end of create_display_timers()
-// xTaskCreate(handle_lvgl_timer, "LVGL Timer Handler Task", LVGL_TASK_STACK_SIZE, NULL, LVGL_TASK_PRIORITY, NULL);
-//
-// void handle_lvgl_timer(void *pvParameter) {
-//     uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
-//     while (1) {
-//         task_delay_ms = fire_lvgl_timer(task_delay_ms);
-//     }
-// }
-
 uint32_t fire_lvgl_timer(uint32_t task_delay_ms) {
     // Lock the mutex because LVGL APIs are not thread-safe
     if (lvgl_lock()) {
@@ -185,7 +171,7 @@ void create_display_timers() {
 }
 
 void update_ui(const std::function<void()>& block) {
-    if (lvgl_lock(-1)) {
+    if (lvgl_lock()) {
         block();
         lvgl_unlock();
     } else {
@@ -194,9 +180,21 @@ void update_ui(const std::function<void()>& block) {
     }
 }
 
-void setup_display() {
+void lvgl_main_task(void *pvParameter) {
     configure_gpio();
     configure_lcd();
     configure_lvgl();
     create_display_timers();
+
+    uint32_t task_delay_ms = LVGL_TASK_MAX_DELAY_MS;
+    while (1) {
+        task_delay_ms = fire_lvgl_timer(task_delay_ms);
+    }
+}
+
+void setup_display() {
+    xTaskCreate(lvgl_main_task, "LVGL Timer Handler Task", LVGL_TASK_STACK_SIZE, NULL, LVGL_TASK_PRIORITY, NULL);
+    while (lv_screen_active() == NULL) {
+        // wait for display to be setup before moving on
+    }
 }
